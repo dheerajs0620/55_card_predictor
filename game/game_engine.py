@@ -28,31 +28,38 @@ class GameEngine:
         """Draws next card and evaluates prediction."""
         self.next_card = self.deck.draw()
         
-        # FIX: compare numeric ranks (2..14), not rank_str. String comparison is
-        # lexicographic, which made "2" > "10" and "A" < "K". Equal ranks are still
-        # a miss for both guesses, same as before.
-        if guess == "HIGHER":
-            correct = self.next_card.numeric_rank > self.current_card.numeric_rank
+        cur = self.current_card.numeric_rank
+        nxt = self.next_card.numeric_rank
+
+        # TASK 3: a tie is a PUSH. Score and streak stay untouched, and the
+        # round is neither a win nor a loss. Checked first so ties never reach
+        # the HIGHER/LOWER comparison below (where they would count as wrong).
+        if nxt == cur:
+            self.status_msg = f"PUSH! {self.next_card.rank_str} equals {self.current_card.rank_str}"
+            self.status_color = (230, 230, 120)  # neutral yellow: not green, not red
         else:
-            correct = self.next_card.numeric_rank < self.current_card.numeric_rank
-        
-        if correct:
-            # TASK 2: extend the streak first, then use it as the multiplier,
-            # so 1st win = 1 pt, 2nd = 2 pts, 3rd = 3 pts, ...
-            self.streak_count += 1
-            points = self.BASE_POINTS * self.streak_count
-            self.score += points
-            self.status_msg = (
-                f"CORRECT! +{points} (x{self.streak_count}) "
-                f"{self.next_card.rank_str} vs {self.current_card.rank_str}"
-            )
-            self.status_color = (80, 220, 80)
-        else:
-            # TASK 2: any wrong guess (including a tie) resets the streak to 0
-            self.streak_count = 0
-            self.score = max(0, self.score - 1)
-            self.status_msg = f"WRONG! {self.next_card.rank_str} vs {self.current_card.rank_str}"
-            self.status_color = (235, 75, 75)
+            # FIX: compare numeric ranks (2..14), not rank_str (lexicographic)
+            if guess == "HIGHER":
+                correct = nxt > cur
+            else:
+                correct = nxt < cur
+
+            if correct:
+                # TASK 2: extend the streak, then use it as the multiplier
+                self.streak_count += 1
+                points = self.BASE_POINTS * self.streak_count
+                self.score += points
+                self.status_msg = (
+                    f"CORRECT! +{points} (x{self.streak_count}) "
+                    f"{self.next_card.rank_str} vs {self.current_card.rank_str}"
+                )
+                self.status_color = (80, 220, 80)
+            else:
+                # TASK 2: a wrong guess resets the streak (ties no longer land here)
+                self.streak_count = 0
+                self.score = max(0, self.score - 1)
+                self.status_msg = f"WRONG! {self.next_card.rank_str} vs {self.current_card.rank_str}"
+                self.status_color = (235, 75, 75)
 
         self.current_card = self.next_card
 
