@@ -1,16 +1,37 @@
 import pygame
 
 
+# FIX: single source of truth for the true rank hierarchy.
+# Comparing rank strings directly is lexicographic ("10" < "2" because "1" < "2"),
+# so every comparison must go through these numeric values instead.
+RANK_VALUES = {
+    "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9,
+    "10": 10, "J": 11, "Q": 12, "K": 13, "A": 14,
+}
+
+
 class Card:
 
-    def __init__(self, rank_str, suit_str, numeric_rank):
+    # numeric_rank is now optional: if Deck passes it, it is used as-is;
+    # otherwise it is looked up from RANK_VALUES so it can never be missing/wrong.
+    def __init__(self, rank_str, suit_str, numeric_rank=None):
         self.rank_str = rank_str
         self.suit_str = suit_str
-        self.numeric_rank = numeric_rank
+        self.numeric_rank = numeric_rank if numeric_rank is not None else RANK_VALUES[rank_str]
 
         self.symbol = {"Hearts": "♥", "Diamonds": "♦", "Clubs": "♣", "Spades": "♠"}.get(suit_str, "")
         self.is_red = suit_str in ("Hearts", "Diamonds")
         self.color = (220, 40, 40) if self.is_red else (30, 30, 30)
+
+    # FIX: comparison operators based on numeric_rank, so `card_a > card_b`
+    # follows 2 < ... < 10 < J < Q < K < A. Suit is ignored (rank-only game).
+    # __eq__ is intentionally NOT overridden, so cards keep normal identity
+    # behaviour (hashing, `in` checks); use `.numeric_rank ==` for rank ties.
+    def __lt__(self, other):
+        return self.numeric_rank < other.numeric_rank
+
+    def __gt__(self, other):
+        return self.numeric_rank > other.numeric_rank
 
     def render(self, surface, x, y, width=130, height=180):
         card_rect = pygame.Rect(x, y, width, height)
