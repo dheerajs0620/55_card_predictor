@@ -2,6 +2,8 @@ import pygame
 from game.deck import Deck
 
 class GameEngine:
+    BASE_POINTS = 1  # TASK 2: points for a correct guess before the streak multiplier
+
     def __init__(self, width, height):
         self.width = width
         self.height = height
@@ -10,6 +12,7 @@ class GameEngine:
         self.current_card = self.deck.draw()
         self.next_card = None
         self.score = 0
+        self.streak_count = 0  # TASK 2: consecutive correct guesses
         self.status_msg = "Will the next card be HIGHER or LOWER?"
         self.status_color = (220, 220, 220)
 
@@ -34,10 +37,19 @@ class GameEngine:
             correct = self.next_card.numeric_rank < self.current_card.numeric_rank
         
         if correct:
-            self.score += 1
-            self.status_msg = f"CORRECT! {self.next_card.rank_str} vs {self.current_card.rank_str}"
+            # TASK 2: extend the streak first, then use it as the multiplier,
+            # so 1st win = 1 pt, 2nd = 2 pts, 3rd = 3 pts, ...
+            self.streak_count += 1
+            points = self.BASE_POINTS * self.streak_count
+            self.score += points
+            self.status_msg = (
+                f"CORRECT! +{points} (x{self.streak_count}) "
+                f"{self.next_card.rank_str} vs {self.current_card.rank_str}"
+            )
             self.status_color = (80, 220, 80)
         else:
+            # TASK 2: any wrong guess (including a tie) resets the streak to 0
+            self.streak_count = 0
             self.score = max(0, self.score - 1)
             self.status_msg = f"WRONG! {self.next_card.rank_str} vs {self.current_card.rank_str}"
             self.status_color = (235, 75, 75)
@@ -62,6 +74,14 @@ class GameEngine:
 
         score_surf = self.font_medium.render(f"Score: {self.score}", True, (255, 220, 80))
         screen.blit(score_surf, (30, 30))
+
+        # TASK 2: streak + the multiplier the NEXT correct guess will earn
+        streak_surf = self.font_small.render(
+            f"Streak: {self.streak_count}  |  Next win: x{self.streak_count + 1}",
+            True,
+            (255, 190, 90) if self.streak_count else (210, 210, 210),
+        )
+        screen.blit(streak_surf, (30, 62))
 
         rem_surf = self.font_small.render(f"Deck: {self.deck.remaining} left", True, (210, 210, 210))
         screen.blit(rem_surf, (self.width - rem_surf.get_width() - 30, 35))
