@@ -13,6 +13,7 @@ def main():
 
     engine = GameEngine(WIDTH, HEIGHT)
 
+    dt = 0  # TASK 4: ms elapsed in the previous frame, drives the reveal timer
     running = True
     while running:
         for event in pygame.event.get():
@@ -20,11 +21,11 @@ def main():
                 running = False
             engine.handle_event(event)
 
-        engine.update()
+        engine.update(dt)  # TASK 4: pass frame time so the engine can time the reveal
         engine.render(screen)
 
         pygame.display.flip()
-        clock.tick(FPS)
+        dt = clock.tick(FPS)  # TASK 4: capture the frame time instead of discarding it
 
     pygame.quit()
 
